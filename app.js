@@ -1,8 +1,11 @@
 var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
-var jwt = require('jsonwebtoken');
-var mongoose = require('mongoose');
+var bodyParser = require('body-parser');
+var validator = require('email-validator');
+var bcrypt = require('bcryptjs');
+var jwt = require('jsonwebtoken'); // sign (encoding ({}, 'secret')) + verify (decoding (token, 'secret'))
+var mongoose = require('mongoose'); // deal with db
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
@@ -11,6 +14,7 @@ app.use(bodyParser.urlencoded({
 
 
 let dburl = 'mongodb://mareddit:123123@ds115573.mlab.com:15573/mareddit'
+
 mongoose.connect(dburl, {
     useMongoClient: true
 })
@@ -32,16 +36,16 @@ app.get('/', function(req, res) {
     res.status(200).send('MAIN PAGE')
 });
 
-
+// middleware
 function auth(req, res, next) {
 
-    if (req.header.token != undefined) {
-        jwt.verify(req.header.token, 'secret', function(err, result) {
-            if (err) throw err;
+    if (req.headers.token != undefined) {
+        jwt.verify(req.headers.token, 'secret', function(err, result) {
+            if (err) { res.send('token is not valid')};
             if (result) {
-            	req.body.email = result._doc.email
-            	req.body.author_id = result._doc.author_id,
-            	req.body.author = result._doc.author
+            	req.body.email = result.email
+            	req.body.author_id = result.id,
+            	req.body.author = result.author
                 next()
             } else {
                 res.status(401).send({
@@ -50,7 +54,7 @@ function auth(req, res, next) {
             }
         })
     } else {
-        res.status(300).send('token is undefined')
+        res.status(300).send('token is undefined \n')
     }
 }
 
@@ -70,9 +74,11 @@ app.post('/api/login', (req, res) => {
         }, (err, result) => {
             if (err) throw err;
 
-            let author_id = result.id;
-            let author = result.author;
 
+            let author_id = result._id;
+            let author = result.username;
+
+            console.log(author_id)
 
             bcrypt.compare(password, result.password_hash, function(err, result) {
 
@@ -81,12 +87,11 @@ app.post('/api/login', (req, res) => {
                         email: email,
                         id: author_id,
                         author: author
-                    }, 'this is my secret, so keep it as it is', (err, token) => {
+                    }, 'secret', (err, token) => {
                         res.status(200).send({
                             token: token,
                             errorCode: 3232,
                             msg: 'logged in successfuly'
-
                         })
                     })
                 } else {
@@ -103,8 +108,9 @@ app.post('/api/login', (req, res) => {
 
         })
     }
-
 })
+
+
 app.post('/api/signup', (req, res) => {
 
     let email = req.body.email
@@ -126,8 +132,7 @@ app.post('/api/signup', (req, res) => {
             }, function(err, result) {
                 if (err) throw err;
                 if (result) {
-                    res.status(200).send({
-                        result: result,
+                    res.status(300).send({
                         errorCode: 0,
                         msg: 'user does exist'
                     })
@@ -140,7 +145,7 @@ app.post('/api/signup', (req, res) => {
 
                         let user = new Users({
                             username: username,
-                            password: hash,
+                            password_hash: hash,
                             email: email
                         })
 
@@ -180,6 +185,8 @@ app.post('/api/signup', (req, res) => {
 
 // Articles CRUD
 app.get('/api/articles', auth, (req, res) => {
+    console.log(req.body)
+
     Articles.find({}, (err, result) => {
         if (err) throw err;
         res.status(200).json(result)
@@ -188,7 +195,8 @@ app.get('/api/articles', auth, (req, res) => {
 
 
 app.post('/api/articles', auth, (req, res) => {
-    
+    console.log(req.body)
+
     let article = new Articles({
         content: req.body.content,
         title: req.body.title,
@@ -198,6 +206,8 @@ app.post('/api/articles', auth, (req, res) => {
 
     article.save((err, result) => {
         if (err) throw err;
+
+        console.log(result)
         res.status(200).json(result)
     })
 })
@@ -216,4 +226,8 @@ io.on('connection', function(socket) {
 });
 
 
-server.listen(80);
+let listener = server.listen( process.env.PORT || 3100, function () {
+    console.log(`listeing on port ${listener.address().port}`)
+});
+
+
