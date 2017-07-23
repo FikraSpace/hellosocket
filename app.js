@@ -84,6 +84,8 @@ app.post('/api/login', (req, res) => {
                 res.send({message: 'not valid values', errorCode:5001})
             }
 
+            console.log(result)
+
             let author_id = result._id;
             let author = result.username;
 
