@@ -23,7 +23,8 @@ let Articles = mongoose.model('articles', {
     content: String,
     title: String,
     author_id: String,
-    author: String
+    author: String,
+    votes: Number
 })
 
 let Users = mongoose.model('users', {
@@ -59,6 +60,8 @@ function auth(req, res, next) {
 }
 
 
+
+
 // authintication
 app.post('/api/login', (req, res) => {
     let {
@@ -72,13 +75,14 @@ app.post('/api/login', (req, res) => {
         Users.findOne({
             email: email
         }, (err, result) => {
-            if (err) throw err;
 
+            if (!result) {
+                res.send({message: 'not valid values', errorCode:5001})
+            }
 
             let author_id = result._id;
             let author = result.username;
 
-            console.log(author_id)
 
             bcrypt.compare(password, result.password_hash, function(err, result) {
 
