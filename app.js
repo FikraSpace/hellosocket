@@ -76,6 +76,10 @@ app.post('/api/login', (req, res) => {
             email: email
         }, (err, result) => {
 
+            if (err) {
+                res.send({message: 'error in the server', err:err , errorCode:5002})
+            }
+
             if (!result) {
                 res.send({message: 'not valid values', errorCode:5001})
             }
