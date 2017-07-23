@@ -42,11 +42,13 @@ function auth(req, res, next) {
 
     if (req.headers.token != undefined) {
         jwt.verify(req.headers.token, 'secret', function(err, result) {
-            if (err) { res.send('token is not valid')};
+            if (err) {
+                res.send('token is not valid')
+            };
             if (result) {
-            	req.body.email = result.email
-            	req.body.author_id = result.id,
-            	req.body.author = result.author
+                req.body.email = result.email
+                req.body.author_id = result.id,
+                    req.body.author = result.author
                 next()
             } else {
                 res.status(401).send({
@@ -77,42 +79,51 @@ app.post('/api/login', (req, res) => {
         }, (err, result) => {
 
             if (err) {
-                res.send({message: 'error in the server', err:err , errorCode:5002})
+                res.send({
+                    message: 'error in the server',
+                    err: err,
+                    errorCode: 5002
+                })
             }
 
-            if (!result) {
-                res.send({message: 'not valid values', errorCode:5001})
-            }
-
-            console.log(result)
-
-            let author_id = result._id;
-            let author = result.username;
+            if (result) {
+                let author_id = result._id;
+                let author = result.username;
 
 
-            bcrypt.compare(password, result.password_hash, function(err, result) {
+                bcrypt.compare(password, result.password_hash, function(err, result) {
 
-                if (result) {
-                    jwt.sign({
-                        email: email,
-                        id: author_id,
-                        author: author
-                    }, 'secret', (err, token) => {
-                        res.status(200).send({
-                            token: token,
-                            errorCode: 3232,
-                            msg: 'logged in successfuly'
+                    if (result) {
+                        jwt.sign({
+                            email: email,
+                            id: author_id,
+                            author: author
+                        }, 'secret', (err, token) => {
+                            res.status(200).send({
+                                token: token,
+                                errorCode: 3232,
+                                msg: 'logged in successfuly'
+                            })
                         })
-                    })
-                } else {
-                    res.status(200).send({
-                        errorCode: 32342,
-                        msg: 'incorrect password and email'
-                    })
-                }
+                    } else {
+                        res.status(200).send({
+                            errorCode: 32342,
+                            msg: 'incorrect password and email'
+                        })
+                    }
 
 
-            });
+                });
+
+            } else {
+                res.send({
+                    message: 'not valid values',
+                    errorCode: 5001
+                })
+
+            }
+
+
 
 
 
@@ -236,8 +247,6 @@ io.on('connection', function(socket) {
 });
 
 
-let listener = server.listen( process.env.PORT || 3100, function () {
+let listener = server.listen(process.env.PORT || 3100, function() {
     console.log(`listeing on port ${listener.address().port}`)
 });
-
-
