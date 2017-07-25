@@ -63,6 +63,19 @@ function auth(req, res, next) {
 
 
 
+app.put('/api/articles/:id', auth, (req, res)=>{
+ 
+    let voteValue = req.body.vote
+    // findOne id == req.params.id
+    // check the value of the vote key in db
+    // result.vote + voteValue
+    // save the new data the the object 
+
+    
+
+})
+
+
 
 // authintication
 app.post('/api/login', (req, res) => {
@@ -74,6 +87,7 @@ app.post('/api/login', (req, res) => {
     if ((email && password) === undefined) {
         res.status(400).send('some credintails not exists')
     } else {
+        // check if email is valid
         Users.findOne({
             email: email
         }, (err, result) => {
@@ -85,6 +99,7 @@ app.post('/api/login', (req, res) => {
                     errorCode: 5002
                 })
             }
+
 
             if (result) {
                 let author_id = result._id;
@@ -222,7 +237,8 @@ app.post('/api/articles', auth, (req, res) => {
         content: req.body.content,
         title: req.body.title,
         author_id: req.body.author_id,
-        author: req.body.author
+        author: req.body.author,
+        vote: 0
     })
 
     article.save((err, result) => {
@@ -238,9 +254,11 @@ app.post('/api/articles', auth, (req, res) => {
 
 
 io.on('connection', function(socket) {
-    socket.emit('news', {
-        hello: 'world'
-    });
+    
+    // socket.emit('news', {
+    //     hello: 'world'
+    // });
+
     socket.on('my other event', function(data) {
         console.log(data);
     });
